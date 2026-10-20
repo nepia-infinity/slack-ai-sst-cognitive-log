@@ -15,15 +15,15 @@ CBT（認知行動療法）の考え方に基づいて、日々の出来事、�
 
 ## 主な機能
 
-- 毎朝8時（日本時間）に、配信を有効にしたユーザーへ記録の案内をDMで送信します。手動トリガーからも実行できます。
+- 毎朝8時（日本時間）に、配信を有効にしたユーザーへ記録の案内をDMで送信します。
 - 感情を13種類から選び、出来事や考えを入力すると、回答をDatastoreに保存します。
-- 「怒り」を選ぶと同じ入力画面にアンガーマネジメントの案内、怒りの強さ（1〜10）、重要度と変えられるかの選択欄が表示されます。追加回答は元の記録IDにひも付けて `anger_log` に保存します。
-- 保存後、OpenAIの `gpt-5-mini` が入力を「出来事・認知・感情」と最大3件の行動案に整理し、DMに表示します。差し迫った危険への応答では通常の分類や行動カードを表示しません。AIの回答は医療行為ではありません。
-- 毎週日曜20時（日本時間）に、直近7日間の感情の内訳と記録一覧をDMで送ります。怒りの記録がある場合は、日別の最大強度の折れ線グラフと、日時・投稿内容・強度・重要度の表も別メッセージで送ります。記録のないレポートは送りません。
+- 「怒り」を選ぶと同じ入力画面にアンガーマネジメントの案内、怒りの強さ（1〜10）、重要度と変えられるかの選択欄が表示されます。
+- OpenAIの `gpt-5-mini` が入力を「出来事・認知・感情」と最大3件の行動案に整理し、DMに表示します。
+- 毎週日曜20時（日本時間）に、直近7日間の感情の内訳と記録一覧をDMで送ります。
 
 ## ローカルで動かす
 
-Slack CLI、Deno、アプリをインストールできるSlackワークスペースが必要です。以下はWindows PowerShellで `slack-cli` を使う例です。コマンド名が `slack` の環境では読み替えてください。
+Slack CLI、Deno、アプリをインストールできるSlackワークスペースが必要です。以下はWindows PowerShellで `slack-cli` を使う例です。
 
 ```powershell
 git clone https://github.com/nepia-infinity/ai-sst-cognitive-log.git
@@ -31,20 +31,8 @@ cd ai-sst-cognitive-log
 slack-cli login
 ```
 
-既存のチェックアウトでは、必要に応じて `git pull origin master` で更新してください。プロジェクト直下の `.env` にOpenAI APIキーを設定します。
-
-```text
-OPENAI_API_KEY=取得したAPIキー
-```
-
-`.env` はGit管理対象外です。APIキーをコミットしたり、ログに出したりしないでください。OpenAI APIの利用にはAPIキーと利用枠が必要で、ChatGPTの契約とは別です。入力した感情と自由記述はOpenAIへ送られます。
-
-```powershell
-slack-cli run
-```
-初回起動時はワークスペースとローカルアプリを選択します。起動中はSlackに `(local)` の付いたアプリが表示され、停止するときは `Ctrl+C` を押します。別のPowerShellから次のコマンドを実行します。
-
 > [!NOTE]
+> コマンド名が `slack` の環境では読み替えてください。
 > `token_revoked` が出た場合は、`slack-cli login` を実行して認証してください。
 
 ### 配信対象の登録とトリガー
@@ -73,22 +61,6 @@ slack-cli datastore query --app local --datastore daily_reflections '{"limit":10
 deno task test
 ```
 
-怒りを選んだ場合は `slack-cli datastore query --app local --datastore anger_log '{"limit":10}' --output json` でも追加回答を確認できます。4番目の保存ステップはAIの振り返りの後に動くため、AI処理が失敗した場合は通常の記録だけが残り、その回は週次アンガーログにも表示されません。
-
-Datastoreの検索方法と保存項目は [datastores/README.md](datastores/README.md) を参照してください。ローカルアプリへのDatastore操作でサポート警告が出る場合は、`(local)` を選んでいることを確認し、必要に応じて `--force` を追加します。
-
-## 本番環境で運用する
-
-デプロイ版のアプリはローカル版と別環境です。ローカルのDatastoreのレコードとトリガーは本番環境へ自動では移りません。
-
-1. `OPENAI_API_KEY` を用意します。Slack CLIの `slack-cli env set OPENAI_API_KEY` でも設定できます。値の入力を対話形式にすると、コマンド履歴にキーが残りません。`slack-cli deploy` はプロジェクトの `.env` を読み込みます。
-2. `slack-cli deploy` でデプロイし、デプロイ環境のアプリを選びます。
-3. `slack-cli datastore put --app deployed --datastore slack_user_profiles '{"item":{"slack_member_id":"U0123ABCDEF","survey_enabled":true}}'` で本番側の配信対象を登録します。
-4. `slack-cli trigger list --app deployed` で既存トリガーを確認し、必要なものだけ `slack-cli trigger create --app deployed --trigger-def triggers/daily_reflection.ts` と `triggers/weekly_emotion_report.ts` から作成します。手動確認用のトリガーを使う場合は `triggers/manual_daily_reflection.ts` も作成します。
-
-本番の記録は `slack-cli datastore query --app deployed --datastore daily_reflections '{"limit":10}' --output json` で確認できます。ログの確認には `slack-cli activity --tail` を使います。結果には個人的な記述が含まれるため、共有するときは内容を伏せてください。
-
-AI処理が失敗した場合も保存済みの回答は残ります。OpenAIの応答が未完了または構造不正の場合は途中の文章を投稿せず、ワークフローの3番目のステップは失敗として終了します。ローカル実行の関数は外部APIを待つ間に時間制限に達する場合があります。
 
 ## ディレクトリ
 
