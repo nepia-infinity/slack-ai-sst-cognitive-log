@@ -13,6 +13,18 @@
 ## このリポジトリの簡単な説明
 CBT（認知行動療法）の考え方に基づいて、日々の出来事、認知、感情を分類し、datastoreで記録し、AIによる振り返りと具体的な対策を届けるSlackのカスタムワークフローです。
 
+## ディレクトリ
+
+| 場所 | 役割 |
+| --- | --- |
+| [blocks/](blocks/) | 入力画面、AIの行動カード、週次レポートのBlock Kit表示 |
+| [datastores/](datastores/) | 配信対象と回答のデータ構造 |
+| [functions/](functions/) | DM配信、回答保存、AI処理、週次レポートの関数 |
+| [prompts/](prompts/) | CBTの指示文とAIの回答形式 |
+| [triggers/](triggers/) | 手動・定時実行の開始条件 |
+| [workflows/](workflows/) | 日次・週次の処理順序 |
+| [.devcontainer/](.devcontainer/) | コンテナを使う開発環境 |
+
 ## 主な機能
 
 - 毎朝8時（日本時間）に、配信を有効にしたユーザーへ記録の案内をDMで送信します。
@@ -20,6 +32,10 @@ CBT（認知行動療法）の考え方に基づいて、日々の出来事、�
 - 「怒り」を選ぶと同じ入力画面にアンガーマネジメントの案内、怒りの強さ（1〜10）、重要度と変えられるかの選択欄が表示されます。
 - OpenAIの `gpt-5-mini` が入力を「出来事・認知・感情」と最大3件の行動案に整理し、DMに表示します。
 - 毎週日曜20時（日本時間）に、直近7日間の感情の内訳と記録一覧をDMで送ります。
+
+## LINEで使えたら、さらに便利かも？
+<img width="650" alt="image" src="https://github.com/user-attachments/assets/801b709e-db2e-4ac2-b4c4-4de6f7acd4fe" />
+- Slackの本カスタムフローを作り終えた後、LINEで同様のことが出来ないかと思い開発中です。
 
 ## ローカルで動かす
 
@@ -62,14 +78,3 @@ deno task test
 ```
 
 
-## ディレクトリ
-
-| 場所 | 役割 |
-| --- | --- |
-| [blocks/](blocks/) | 入力画面、AIの行動カード、週次レポートのBlock Kit表示 |
-| [datastores/](datastores/) | 配信対象と回答のデータ構造 |
-| [functions/](functions/) | DM配信、回答保存、AI処理、週次レポートの関数 |
-| [prompts/](prompts/) | CBTの指示文とAIの回答形式 |
-| [triggers/](triggers/) | 手動・定時実行の開始条件 |
-| [workflows/](workflows/) | 日次・週次の処理順序 |
-| [.devcontainer/](.devcontainer/) | コンテナを使う開発環境 |
