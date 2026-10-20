@@ -34,7 +34,8 @@ CBT（認知行動療法）の考え方に基づいて、日々の出来事、�
 - 毎週日曜20時（日本時間）に、直近7日間の感情の内訳と記録一覧をDMで送ります。
 
 ## LINEで使えたら、さらに便利かも？
-<img width="650" alt="image" src="https://github.com/user-attachments/assets/801b709e-db2e-4ac2-b4c4-4de6f7acd4fe" />
+<img width="450" alt="image" src="https://github.com/user-attachments/assets/801b709e-db2e-4ac2-b4c4-4de6f7acd4fe" />
+
 - Slackの本カスタムフローを作り終えた後、LINEで同様のことが出来ないかと思い開発中です。
 
 ## ローカルで動かす
