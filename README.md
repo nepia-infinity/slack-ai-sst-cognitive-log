@@ -13,17 +13,33 @@
 ## このリポジトリの簡単な説明
 CBT（認知行動療法）の考え方に基づいて、日々の出来事、認知、感情を分類し、datastoreで記録し、AIによる振り返りと具体的な対策を届けるSlackのカスタムワークフローです。
 
+## ディレクトリ
+
+| 場所 | 役割 |
+| --- | --- |
+| [blocks/](blocks/) | 入力画面、AIの行動カード、週次レポートのBlock Kit表示 |
+| [datastores/](datastores/) | 配信対象と回答のデータ構造 |
+| [functions/](functions/) | DM配信、回答保存、AI処理、週次レポートの関数 |
+| [prompts/](prompts/) | CBTの指示文とAIの回答形式 |
+| [triggers/](triggers/) | 手動・定時実行の開始条件 |
+| [workflows/](workflows/) | 日次・週次の処理順序 |
+| [.devcontainer/](.devcontainer/) | コンテナを使う開発環境 |
+
 ## 主な機能
 
-- 毎朝8時（日本時間）に、配信を有効にしたユーザーへ記録の案内をDMで送信します。手動トリガーからも実行できます。
+- 毎朝8時（日本時間）に、配信を有効にしたユーザーへ記録の案内をDMで送信します。
 - 感情を13種類から選び、出来事や考えを入力すると、回答をDatastoreに保存します。
-- 「怒り」を選ぶと同じ入力画面にアンガーマネジメントの案内、怒りの強さ（1〜10）、重要度と変えられるかの選択欄が表示されます。追加回答は元の記録IDにひも付けて `anger_log` に保存します。
-- 保存後、OpenAIの `gpt-5-mini` が入力を「出来事・認知・感情」と最大3件の行動案に整理し、DMに表示します。差し迫った危険への応答では通常の分類や行動カードを表示しません。AIの回答は医療行為ではありません。
-- 毎週日曜20時（日本時間）に、直近7日間の感情の内訳と記録一覧をDMで送ります。怒りの記録がある場合は、日別の最大強度の折れ線グラフと、日時・投稿内容・強度・重要度の表も別メッセージで送ります。記録のないレポートは送りません。
+- 「怒り」を選ぶと同じ入力画面にアンガーマネジメントの案内、怒りの強さ（1〜10）、重要度と変えられるかの選択欄が表示されます。
+- OpenAIの `gpt-5-mini` が入力を「出来事・認知・感情」と最大3件の行動案に整理し、DMに表示します。
+- 毎週日曜20時（日本時間）に、直近7日間の感情の内訳と記録一覧をDMで送ります。
+
+## LINEで使えたら、さらに便利かも？
+<img width="400" alt="image" src="https://github.com/user-attachments/assets/801b709e-db2e-4ac2-b4c4-4de6f7acd4fe" />
+
 
 ## ローカルで動かす
 
-Slack CLI、Deno、アプリをインストールできるSlackワークスペースが必要です。以下はWindows PowerShellで `slack-cli` を使う例です。コマンド名が `slack` の環境では読み替えてください。
+Slack CLI、Deno、アプリをインストールできるSlackワークスペースが必要です。以下はWindows PowerShellで `slack-cli` を使う例です。
 
 ```powershell
 git clone https://github.com/nepia-infinity/ai-sst-cognitive-log.git
@@ -31,20 +47,8 @@ cd ai-sst-cognitive-log
 slack-cli login
 ```
 
-既存のチェックアウトでは、必要に応じて `git pull origin master` で更新してください。プロジェクト直下の `.env` にOpenAI APIキーを設定します。
-
-```text
-OPENAI_API_KEY=取得したAPIキー
-```
-
-`.env` はGit管理対象外です。APIキーをコミットしたり、ログに出したりしないでください。OpenAI APIの利用にはAPIキーと利用枠が必要で、ChatGPTの契約とは別です。入力した感情と自由記述はOpenAIへ送られます。
-
-```powershell
-slack-cli run
-```
-初回起動時はワークスペースとローカルアプリを選択します。起動中はSlackに `(local)` の付いたアプリが表示され、停止するときは `Ctrl+C` を押します。別のPowerShellから次のコマンドを実行します。
-
 > [!NOTE]
+> コマンド名が `slack` の環境では読み替えてください。
 > `token_revoked` が出た場合は、`slack-cli login` を実行して認証してください。
 
 ### 配信対象の登録とトリガー
@@ -73,6 +77,7 @@ slack-cli datastore query --app local --datastore daily_reflections '{"limit":10
 deno task test
 ```
 
+<<<<<<< HEAD
 怒りを選んだ場合は `slack-cli datastore query --app local --datastore anger_log '{"limit":10}' --output json` でも追加回答を確認できます。怒りの記録はAIの振り返りの前に保存されるため、AI処理が失敗した場合も通常の記録とアンガーログの両方が残ります。
 
 Datastoreの検索方法と保存項目は [datastores/README.md](datastores/README.md) を参照してください。ローカルアプリへのDatastore操作でサポート警告が出る場合は、`(local)` を選んでいることを確認し、必要に応じて `--force` を追加します。
@@ -101,3 +106,6 @@ AI処理が失敗した場合も保存済みの回答は残ります。OpenAIの
 | [triggers/](triggers/) | 手動・定時実行の開始条件 |
 | [workflows/](workflows/) | 日次・週次の処理順序 |
 | [.devcontainer/](.devcontainer/) | コンテナを使う開発環境 |
+=======
+
+>>>>>>> a897f7cd11580c063f977448eac045b67a4f1d75
