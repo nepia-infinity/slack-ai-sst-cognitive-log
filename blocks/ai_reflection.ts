@@ -1,20 +1,40 @@
+/**
+ * AIによる認知行動療法（CBT）の振り返り結果を検証し、
+ * SlackのDMに表示するBlock Kit配列および通知用テキストを組み立てるモジュール。
+ */
+
 import { formatSlackReflection } from "./format_slack_reflection.ts";
 import { ACTION_ICONS } from "../prompts/reflection_response_format.ts";
 
 const DISCLAIMER =
   "※AIメンタルケアは医療行為ではありません。\n必要に応じて医療機関や専門家に相談してください。";
 
+/**
+ * OpenAIのStructured Outputsから返される振り返り結果の構造。
+ * - `kind: "reflection"`: 通常の振り返り（出来事・認知・感情の分類と最大3件の行動カード）
+ * - `kind: "urgent"`: 自傷・他害など差し迫った危険がある場合の安全確保メッセージ
+ */
 export type AiReflection = {
   kind: "reflection" | "urgent";
   message: string;
   event: string;
   cognition: string;
   emotion: string;
-  actions: Array<
-    { title: string; subtitle: string; body: string; icon: string }
-  >;
+  actions: Array<{
+    title: string;
+    subtitle: string;
+    body: string;
+    icon: string;
+  }>;
 };
 
+/**
+ * AIから返されたJSONオブジェクトが `AiReflection` のスキーマを満たしているか検証する。
+ *
+ * @param value JSONパース後の未知の値
+ * @returns 検証済みの `AiReflection` オブジェクト
+ * @throws 必須項目の欠落や型不一致がある場合にエラーを投げる
+ */
 export function parseAiReflection(value: unknown): AiReflection {
   if (!value || typeof value !== "object") {
     throw new Error("AIの回答形式が正しくありません。");
@@ -58,6 +78,15 @@ function context() {
 // deno-lint-ignore no-explicit-any
 type AiReflectionBlock = any;
 
+/**
+ * 検証済みのAI振り返り結果から、Slack表示用のBlock Kit配列を生成する。
+ * 緊急時（`kind === "urgent"`）は分類や行動カードを出さず、安全確保の案内のみを表示する。
+ * カードブロックの文字数上限を超える項目は、全文を読めるよう通常のセクションブロックにフォールバックする。
+ *
+ * @param result 検証済みのAI振り返り結果
+ * @param userId メンション先となるSlackユーザーID（省略時はメンションなし）
+ * @returns Slackメッセージ用のBlock Kit配列
+ */
 export function aiReflectionBlocks(
   result: AiReflection,
   userId?: string,
@@ -138,6 +167,13 @@ export function aiReflectionBlocks(
   return blocks;
 }
 
+/**
+ * OS通知やBlock Kit非対応環境向けに、`chat.update` の `text` 引数へ渡すプレーンテキストを生成する。
+ *
+ * @param result 検証済みのAI振り返り結果
+ * @param userId メンション先となるSlackユーザーID
+ * @returns 通知・読み上げ用の要約テキスト
+ */
 export function aiReflectionFallback(
   result: AiReflection,
   userId?: string,

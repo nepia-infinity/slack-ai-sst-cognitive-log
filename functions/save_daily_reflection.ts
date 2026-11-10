@@ -1,7 +1,16 @@
+/**
+ * モーダルで入力された出来事の振り返りと感情を `daily_reflections` Datastoreへ保存し、
+ * 元の案内DMメッセージを保存完了表示に更新するSlackカスタム関数。
+ */
+
 import { DefineFunction, Schema, SlackFunction } from "deno-slack-sdk/mod.ts";
 import { savedReflectionMessageBlocks } from "../blocks/daily_reflection_prompt.ts";
 import DailyReflectionsDatastore from "../datastores/daily_reflections.ts";
 
+/**
+ * 振り返りの回答を `daily_reflections` Datastoreに保存するSlack関数定義。
+ * モーダルが閉じられてキャンセルされた場合は空の入力を受け取り、保存をスキップする。
+ */
 export const SaveDailyReflectionFunction = DefineFunction({
   callback_id: "save_daily_reflection",
   title: "振り返りを保存",
@@ -27,6 +36,10 @@ export const SaveDailyReflectionFunction = DefineFunction({
   },
 });
 
+/**
+ * 回答をDatastoreに保存し、成功時は元のDMの「記録する」ボタンを消して保存完了メッセージに更新するハンドラ。
+ * 後続のAI振り返り関数が同じDMを更新できるよう、`channelId` と `messageTs` を出力として引き継ぐ。
+ */
 export default SlackFunction(
   SaveDailyReflectionFunction,
   async ({ inputs, client }) => {

@@ -1,3 +1,8 @@
+/**
+ * 感情として「怒り（`anger`）」が選択された回答について、
+ * 怒りの強さ（1〜10）と重要度を `anger_log` Datastoreへ保存するSlackカスタム関数。
+ */
+
 import { DefineFunction, Schema, SlackFunction } from "deno-slack-sdk/mod.ts";
 import {
   isValidAngerLevel,
@@ -5,6 +10,10 @@ import {
 } from "../blocks/daily_reflection_prompt.ts";
 import AngerLogDatastore from "../datastores/anger_log.ts";
 
+/**
+ * 怒りの詳細記録を `anger_log` Datastoreに保存するSlack関数定義。
+ * モーダルがキャンセルされた場合や「怒り」以外の感情が選ばれた場合は保存をスキップする。
+ */
 export const SaveAngerLogFunction = DefineFunction({
   callback_id: "save_anger_log",
   title: "怒りの振り返りを保存",
@@ -23,6 +32,10 @@ export const SaveAngerLogFunction = DefineFunction({
   },
 });
 
+/**
+ * `emotion === "anger"` のときに入力値を検証し、`daily_reflections` と同じ `submissionId` を主キーとして
+ * `anger_log` Datastoreへレコードを保存するハンドラ。
+ */
 export default SlackFunction(
   SaveAngerLogFunction,
   async ({ inputs, client }) => {

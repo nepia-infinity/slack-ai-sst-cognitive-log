@@ -1,3 +1,8 @@
+/**
+ * 日次の振り返り案内メッセージ、入力モーダル、および感情・アンガーマネジメント選択肢と
+ * 入力値検証関数を定義するモジュール。
+ */
+
 export const START_REFLECTION_ACTION_ID = "start_daily_reflection";
 export const DAILY_REFLECTION_MODAL_CALLBACK_ID = "daily_reflection_modal";
 export const REFLECTION_INPUT_BLOCK_ID = "daily_reflection";
@@ -9,10 +14,13 @@ export const ANGER_LEVEL_ACTION_ID = "anger_level_select";
 export const ANGER_PRIORITY_BLOCK_ID = "anger_priority";
 export const ANGER_PRIORITY_ACTION_ID = "anger_priority_select";
 
+/** 怒りの強さ（1〜10）の選択肢定義 */
 export const ANGER_LEVEL_OPTIONS = Array.from({ length: 10 }, (_, index) => ({
   value: String(index + 1),
   label: String(index + 1),
 }));
+
+/** 怒りの対象に関する重要度・変えられるかの4分類選択肢定義 */
 export const ANGER_PRIORITY_OPTIONS = [
   { value: "important_changeable", label: "重要かつ自分で変えることができる" },
   { value: "important_unchangeable", label: "重要だが自分で変えられない" },
@@ -24,6 +32,7 @@ export const ANGER_PRIORITY_OPTIONS = [
 ] as const;
 
 // 値は集計時に使うため固定し、表示名だけを変更できるようにします。
+/** 記録時に選択できる13種類の感情コードと表示名の定義 */
 export const EMOTION_OPTIONS = [
   { value: "anger", label: "怒り" },
   { value: "sadness", label: "悲しみ" },
@@ -40,7 +49,10 @@ export const EMOTION_OPTIONS = [
   { value: "achievement", label: "達成感" },
 ] as const;
 
+/** 感情の固定コード型 */
 export type EmotionValue = (typeof EMOTION_OPTIONS)[number]["value"];
+
+/** 怒りの重要度・制御可能性の固定コード型 */
 export type AngerPriorityValue =
   (typeof ANGER_PRIORITY_OPTIONS)[number]["value"];
 
@@ -56,25 +68,40 @@ const ANGER_LEVEL_VALUE_SET = new Set<string>(
   ANGER_LEVEL_OPTIONS.map(({ value }) => value),
 );
 
+/**
+ * 指定された値が定義済みの感情コード（`EmotionValue`）であるか判定する。
+ */
 export function isValidEmotion(value: unknown): value is EmotionValue {
   return typeof value === "string" && EMOTION_LABEL_MAP.has(value);
 }
 
+/**
+ * 感情コードに対応する日本語の表示名を返す。未定義のコードの場合は `undefined` を返す。
+ */
 export function getEmotionLabel(emotion: string): string | undefined {
   return EMOTION_LABEL_MAP.get(emotion);
 }
 
+/**
+ * 指定された値が有効な怒りの強さ（1〜10の整数または文字列）であるか判定する。
+ */
 export function isValidAngerLevel(value: unknown): boolean {
   return (typeof value === "string" || typeof value === "number") &&
     ANGER_LEVEL_VALUE_SET.has(String(value));
 }
 
+/**
+ * 指定された値が定義済みの怒りの重要度コード（`AngerPriorityValue`）であるか判定する。
+ */
 export function isValidAngerPriority(
   value: unknown,
 ): value is AngerPriorityValue {
   return typeof value === "string" && ANGER_PRIORITY_LABEL_MAP.has(value);
 }
 
+/**
+ * 怒りの重要度コードに対応する日本語の表示名を返す。未定義のコードの場合は `undefined` を返す。
+ */
 export function getAngerPriorityLabel(priority: string): string | undefined {
   return ANGER_PRIORITY_LABEL_MAP.get(priority);
 }
@@ -83,6 +110,7 @@ const PURPOSE_TEXT =
   "認知の歪み、自動思考に気付くために日々の出来事を記録します。";
 const ANGER_PURPOSE_TEXT =
   "怒りで後悔しないことがアンガーマネジメントです。\n問題になる怒り（強度、持続性、頻度、攻撃性）などに気を付けましょう。";
+
 function mentionBlocks(userId?: string) {
   return userId
     ? [{
@@ -92,6 +120,11 @@ function mentionBlocks(userId?: string) {
     : [];
 }
 
+/**
+ * 毎朝の振り返り案内DMに表示するBlock Kit配列（「記録する」ボタン付き）を生成する。
+ *
+ * @param userId メンション先となるSlackユーザーID
+ */
 // Block Kitの型はSlack API側で検証されるため、再利用しやすい配列として返します。
 // deno-lint-ignore no-explicit-any
 export function dailyReflectionMessageBlocks(userId?: string): any[] {
@@ -131,6 +164,11 @@ export function dailyReflectionMessageBlocks(userId?: string): any[] {
   ];
 }
 
+/**
+ * モーダル送信後、元の案内DMを上書き更新するための保存完了Block Kit配列を生成する。
+ *
+ * @param userId メンション先となるSlackユーザーID
+ */
 // 保存後も最初のメンションを残し、同じメッセージを更新します。
 // deno-lint-ignore no-explicit-any
 export function savedReflectionMessageBlocks(userId?: string): any[] {
@@ -161,6 +199,14 @@ export function savedReflectionMessageBlocks(userId?: string): any[] {
   ];
 }
 
+/**
+ * 出来事と感情を入力するSlackモーダルビューを生成する。
+ * 感情として `"anger"`（怒り）が選択されている場合は、冒頭の説明文を差し替え、
+ * アンガーマネジメントのヒント・怒りの強さ（1〜10）・重要度の入力欄を動的に追加する。
+ *
+ * @param privateMetadata 元のDMの `channelId` と `messageTs` を保持するJSON文字列
+ * @param selectedEmotion 現在選択されている感情コード（未選択時は省略）
+ */
 export function dailyReflectionModal(
   privateMetadata: string,
   selectedEmotion?: string,
@@ -249,6 +295,9 @@ export function dailyReflectionModal(
   };
 }
 
+/**
+ * 感情で「怒り」を選択した際にモーダルへ追加表示するアンガーマネジメント案内と専用入力欄を返す。
+ */
 // deno-lint-ignore no-explicit-any
 function angerManagementBlocks(): any[] {
   return [

@@ -1,3 +1,8 @@
+/**
+ * 保存済みの振り返り内容をOpenAI Responses API（`gpt-5-mini`）へ送信し、
+ * CBTに基づく構造化回答で回答者のDMメッセージを更新するSlackカスタム関数。
+ */
+
 import { DefineFunction, Schema, SlackFunction } from "deno-slack-sdk/mod.ts";
 import { getEmotionLabel } from "../blocks/daily_reflection_prompt.ts";
 import { CBT_SYSTEM_PROMPT } from "../prompts/cbt_reflection.ts";
@@ -8,6 +13,10 @@ import {
   parseAiReflection,
 } from "../blocks/ai_reflection.ts";
 
+/**
+ * AIによる振り返りを実行し、元のDMメッセージを上書き更新するSlack関数定義。
+ * モーダルがキャンセルされた場合は空の入力を受け取り、何もせず正常終了する。
+ */
 export const AnalyzeDailyReflectionFunction = DefineFunction({
   callback_id: "analyze_daily_reflection",
   title: "AIと振り返る",
@@ -26,6 +35,7 @@ export const AnalyzeDailyReflectionFunction = DefineFunction({
   },
 });
 
+/** OpenAI Responses API（`/v1/responses`）のレスポンス構造 */
 type OpenAIResponse = {
   status?: string;
   incomplete_details?: { reason?: string } | null;
@@ -39,6 +49,10 @@ type OpenAIResponse = {
   }>;
 };
 
+/**
+ * OpenAI APIを呼び出して振り返り結果を生成し、`chat.update` で元のDMを更新するハンドラ。
+ * APIキー未設定やAPIエラー時は、記録自体は保存済みである旨のエラー案内を同じDMに表示する。
+ */
 export default SlackFunction(
   AnalyzeDailyReflectionFunction,
   async ({ inputs, client, env }) => {

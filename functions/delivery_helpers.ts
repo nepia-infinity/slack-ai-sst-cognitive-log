@@ -1,7 +1,14 @@
+/**
+ * 配信対象ユーザーの取得、期間指定のDatastoreクエリ、およびDM送信処理を
+ * 日次・週次の各配信関数間で共有するヘルパーモジュール。
+ */
+
 import { currentWeekWindow } from "../blocks/report_utils.ts";
 
+/** 配信対象ユーザーのプロファイルを管理するDatastore名 */
 export const SLACK_USER_PROFILES_DATASTORE = "slack_user_profiles";
 
+/** Slack DatastoreクエリAPIのレスポンス型 */
 export type DatastoreQueryResponse = {
   ok: boolean;
   error?: string;
@@ -12,6 +19,10 @@ export type DatastoreQueryResponse = {
   };
 };
 
+/**
+ * Datastore検索とDM送信に必要なSlack APIクライアントの最小インターフェース。
+ * テスト時に外部SDKへ依存せずモックを注入できるよう構造的部分型として定義する。
+ */
 export type SlackDeliveryClient = {
   apps: {
     datastore: {
@@ -37,11 +48,19 @@ export type SlackDeliveryClient = {
   };
 };
 
+/** 定期配信が有効（`survey_enabled: true`）なユーザー情報 */
 export type EnabledRecipient = {
   userId: string;
   dmChannelId?: string;
 };
 
+/**
+ * `slack_user_profiles` Datastoreから `survey_enabled = true` の全ユーザーを
+ * カーソルページネーションで取得する。
+ *
+ * @param client Slack APIクライアント
+ * @returns 取得成功時は対象ユーザー配列、失敗時はエラーメッセージ
+ */
 export async function fetchEnabledRecipients(
   client: SlackDeliveryClient,
 ): Promise<
@@ -85,6 +104,13 @@ export async function fetchEnabledRecipients(
   return { ok: true, recipients };
 }
 
+/**
+ * 指定ユーザーのDMチャンネルを開き（または既存の `dmChannelId` を使い）、メッセージを投稿する。
+ *
+ * @param client Slack APIクライアント
+ * @param options 送信先ユーザーID・DMチャンネルID・本文・Block Kit配列・エラーログ用ラベル
+ * @returns 投稿に成功した場合は `true`、失敗した場合は `false`
+ */
 export async function postDirectMessage(
   client: SlackDeliveryClient,
   options: {
@@ -128,6 +154,14 @@ export async function postDirectMessage(
   return true;
 }
 
+/**
+ * 指定されたDatastoreから、対象ユーザーの集計期間内（`recorded_at BETWEEN :start AND :end`）の
+ * レコードをカーソルページネーションで全件取得する。
+ *
+ * @param client Slack APIクライアント
+ * @param options Datastore名・対象ユーザーID・集計期間・エラーログ用ラベル
+ * @returns 取得したレコード配列（クエリ失敗時は `null`）
+ */
 export async function queryUserRecordsInWindow<TRecord>(
   client: SlackDeliveryClient,
   options: {
@@ -171,6 +205,14 @@ export async function queryUserRecordsInWindow<TRecord>(
   return records;
 }
 
+/**
+ * 週次レポート（感情レポート・アンガーログ）の共通配信フローを実行する。
+ * 配信有効な各ユーザーについて直近7日間のレコードを取得し、記録が存在するユーザーにのみDMを送信する。
+ *
+ * @param client Slack APIクライアント
+ * @param options 対象Datastore・通知テキスト・Block生成関数・基準日時
+ * @returns SlackFunctionの実行結果（`{ outputs: {} }` または `{ error }`）
+ */
 export async function deliverWeeklyReport<TRecord>(
   client: SlackDeliveryClient,
   options: {

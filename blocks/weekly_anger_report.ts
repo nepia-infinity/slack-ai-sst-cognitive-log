@@ -1,3 +1,7 @@
+/**
+ * 週次アンガーログ（日別の最大怒り強度の折れ線グラフと記録一覧表）のBlock Kit配列を生成するモジュール。
+ */
+
 import {
   getAngerPriorityLabel,
   isValidAngerLevel,
@@ -8,6 +12,7 @@ import { jstDateTime, MAX_TABLE_RECORDS, shorten } from "./report_utils.ts";
 // deno-lint-ignore no-explicit-any
 type WeeklyAngerBlocks = any[];
 
+/** `anger_log` Datastoreから取得される1件分の怒り記録レコード */
 export type AngerRecord = {
   id: string;
   user_id: string;
@@ -17,6 +22,15 @@ export type AngerRecord = {
   recorded_at: number;
 };
 
+/**
+ * 指定ユーザー・集計期間内の怒りの記録から、折れ線グラフと一覧表のBlock Kit配列を生成する。
+ * 対象期間内の有効な記録が0件の場合は空配列 `[]` を返し、配信をスキップできるようにする。
+ *
+ * @param records Datastoreから取得した怒り記録の配列
+ * @param window 集計期間（`start` 以上 `end` 未満のUnixミリ秒）
+ * @param userId 対象ユーザーのSlackメンバーID
+ * @returns 週次アンガーログのBlock Kit配列（該当なしの場合は空配列）
+ */
 export function weeklyAngerBlocks(
   records: AngerRecord[],
   window: { start: number; end: number },

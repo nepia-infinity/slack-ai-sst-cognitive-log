@@ -1,3 +1,7 @@
+/**
+ * 週次感情レポート（直近7日間の感情内訳の円グラフと記録一覧表）のBlock Kit配列を生成するモジュール。
+ */
+
 import {
   EMOTION_OPTIONS,
   getEmotionLabel,
@@ -16,6 +20,7 @@ export { currentWeekWindow };
 // deno-lint-ignore no-explicit-any
 type WeeklyEmotionBlocks = any[];
 
+/** `daily_reflections` Datastoreから取得される1件分の振り返り記録レコード */
 export type ReflectionRecord = {
   id: string;
   user_id: string;
@@ -24,6 +29,16 @@ export type ReflectionRecord = {
   recorded_at: number;
 };
 
+/**
+ * 指定ユーザー・集計期間内の振り返り記録から、感情内訳の円グラフと一覧表のBlock Kit配列を生成する。
+ * 円グラフには期間内の全有効回答を集計し、一覧表には新しい順で最大100件を表示する。
+ * 対象期間内の有効な記録が0件の場合は空配列 `[]` を返し、配信をスキップできるようにする。
+ *
+ * @param records Datastoreから取得した振り返り記録の配列
+ * @param window 集計期間（`start` 以上 `end` 未満のUnixミリ秒）
+ * @param userId 対象ユーザーのSlackメンバーID
+ * @returns 週次感情レポートのBlock Kit配列（該当なしの場合は空配列）
+ */
 export function weeklyEmotionBlocks(
   records: ReflectionRecord[],
   window: { start: number; end: number },

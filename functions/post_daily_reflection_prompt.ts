@@ -1,3 +1,8 @@
+/**
+ * 配信対象ユーザーのDMへ振り返り案内メッセージを投稿し、
+ * ボタン操作・モーダル入力・送信・キャンセルの各インタラクションを処理するSlackカスタム関数。
+ */
+
 import { DefineFunction, Schema, SlackFunction } from "deno-slack-sdk/mod.ts";
 import {
   ANGER_LEVEL_ACTION_ID,
@@ -21,6 +26,10 @@ import {
   postDirectMessage,
 } from "./delivery_helpers.ts";
 
+/**
+ * 振り返り案内DMの配信とモーダル入力の受付を行うSlack関数定義。
+ * モーダル送信またはクローズのイベントが到着するまで `completed: false` で待機する。
+ */
 export const PostDailyReflectionPromptFunction = DefineFunction({
   callback_id: "post_daily_reflection_prompt",
   title: "毎日の振り返りを投稿",
@@ -52,6 +61,13 @@ export const PostDailyReflectionPromptFunction = DefineFunction({
   },
 });
 
+/**
+ * 1. 初回実行時: `survey_enabled: true` の対象者へ「記録する」ボタン付きDMを送信し、入力待ちにする。
+ * 2. `START_REFLECTION_ACTION_ID`: ボタン押下時に元のDMのチャンネルID・タイムスタンプを引き継いでモーダルを開く。
+ * 3. `EMOTION_INPUT_ACTION_ID`: 感情で「怒り」が選択・解除された際にモーダルを更新し、専用入力欄を出し分ける。
+ * 4. `addViewSubmissionHandler`: 入力値を検証し、後続の保存・AI振り返りステップへ出力を渡して関数を完了する。
+ * 5. `addViewClosedHandler`: モーダルが閉じられた場合は空の出力で関数を完了し、後続ステップをスキップさせる。
+ */
 export default SlackFunction(
   PostDailyReflectionPromptFunction,
   async ({ client }) => {
