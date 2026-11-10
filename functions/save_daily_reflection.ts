@@ -67,7 +67,9 @@ export default SlackFunction(
           `<@${userId}> 振り返りを保存できませんでした。時間をおいてもう一度入力してください。`,
       });
       if (!failed.ok) {
-        console.error(`保存失敗メッセージの更新にも失敗しました: ${failed.error}`);
+        console.error(
+          `保存失敗メッセージの更新にも失敗しました: ${failed.error}`,
+        );
       }
       return { error: `振り返りを保存できませんでした: ${response.error}` };
     }
@@ -80,7 +82,9 @@ export default SlackFunction(
     });
     if (!confirmation.ok) {
       // 保存は成功しているため、完了表示の失敗で再保存はしない。
-      console.error(`保存後のメッセージ更新に失敗しました: ${confirmation.error}`);
+      console.error(
+        `保存後のメッセージ更新に失敗しました: ${confirmation.error}`,
+      );
     }
     return { outputs: { channelId, messageTs } };
   },

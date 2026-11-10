@@ -76,36 +76,3 @@ slack-cli datastore count --app local --datastore daily_reflections
 slack-cli datastore query --app local --datastore daily_reflections '{"limit":10}' --output json
 deno task test
 ```
-
-<<<<<<< HEAD
-怒りを選んだ場合は `slack-cli datastore query --app local --datastore anger_log '{"limit":10}' --output json` でも追加回答を確認できます。怒りの記録はAIの振り返りの前に保存されるため、AI処理が失敗した場合も通常の記録とアンガーログの両方が残ります。
-
-Datastoreの検索方法と保存項目は [datastores/README.md](datastores/README.md) を参照してください。ローカルアプリへのDatastore操作でサポート警告が出る場合は、`(local)` を選んでいることを確認し、必要に応じて `--force` を追加します。
-
-## 本番環境で運用する
-
-デプロイ版のアプリはローカル版と別環境です。ローカルのDatastoreのレコードとトリガーは本番環境へ自動では移りません。
-
-1. `OPENAI_API_KEY` を用意します。Slack CLIの `slack-cli env set OPENAI_API_KEY` でも設定できます。値の入力を対話形式にすると、コマンド履歴にキーが残りません。`slack-cli deploy` はプロジェクトの `.env` を読み込みます。
-2. `slack-cli deploy` でデプロイし、デプロイ環境のアプリを選びます。
-3. `slack-cli datastore put --app deployed --datastore slack_user_profiles '{"item":{"slack_member_id":"U0123ABCDEF","survey_enabled":true}}'` で本番側の配信対象を登録します。
-4. `slack-cli trigger list --app deployed` で既存トリガーを確認し、必要なものだけ `slack-cli trigger create --app deployed --trigger-def triggers/daily_reflection.ts` と `triggers/weekly_emotion_report.ts` から作成します。手動確認用のトリガーを使う場合は `triggers/manual_daily_reflection.ts` も作成します。
-
-本番の記録は `slack-cli datastore query --app deployed --datastore daily_reflections '{"limit":10}' --output json` で確認できます。ログの確認には `slack-cli activity --tail` を使います。結果には個人的な記述が含まれるため、共有するときは内容を伏せてください。
-
-AI処理が失敗した場合も保存済みの回答は残ります。OpenAIの応答が未完了または構造不正の場合は途中の文章を投稿せず、ワークフローの4番目のステップは失敗として終了します。ローカル実行の関数は外部APIを待つ間に時間制限に達する場合があります。
-
-## ディレクトリ
-
-| 場所 | 役割 |
-| --- | --- |
-| [blocks/](blocks/) | 入力画面、AIの行動カード、週次レポートのBlock Kit表示 |
-| [datastores/](datastores/) | 配信対象と回答のデータ構造 |
-| [functions/](functions/) | DM配信、回答保存、AI処理、週次レポートの関数 |
-| [prompts/](prompts/) | CBTの指示文とAIの回答形式 |
-| [triggers/](triggers/) | 手動・定時実行の開始条件 |
-| [workflows/](workflows/) | 日次・週次の処理順序 |
-| [.devcontainer/](.devcontainer/) | コンテナを使う開発環境 |
-=======
-
->>>>>>> a897f7cd11580c063f977448eac045b67a4f1d75

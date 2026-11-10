@@ -2,7 +2,6 @@ import { Manifest } from "deno-slack-sdk/mod.ts";
 import SlackUserProfilesDatastore from "./datastores/slack_user_profiles.ts";
 import DailyReflectionsDatastore from "./datastores/daily_reflections.ts";
 import AngerLogDatastore from "./datastores/anger_log.ts";
-import UserSettingsDatastore from "./datastores/user_settings.ts";
 import { PostDailyReflectionPromptFunction } from "./functions/post_daily_reflection_prompt.ts";
 import { SaveDailyReflectionFunction } from "./functions/save_daily_reflection.ts";
 import { AnalyzeDailyReflectionFunction } from "./functions/analyze_daily_reflection.ts";
@@ -26,7 +25,6 @@ export default Manifest({
   ],
   workflows: [DailyReflectionWorkflow, WeeklyEmotionReportWorkflow],
   datastores: [
-    UserSettingsDatastore,
     SlackUserProfilesDatastore,
     DailyReflectionsDatastore,
     AngerLogDatastore,
