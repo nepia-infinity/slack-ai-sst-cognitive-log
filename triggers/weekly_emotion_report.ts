@@ -1,23 +1,7 @@
 import { TriggerTypes } from "deno-slack-api/mod.ts";
 import { ScheduledTrigger } from "deno-slack-api/typed-method-types/workflows/triggers/scheduled.ts";
+import { nextSundayEightPmJst } from "../blocks/report_utils.ts";
 import WeeklyEmotionReportWorkflow from "../workflows/weekly_emotion_report_workflow.ts";
-
-const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
-
-function nextSundayEightPmJst(now = new Date()): string {
-  const jst = new Date(now.getTime() + JST_OFFSET_MS);
-  const daysUntilSunday = (7 - jst.getUTCDay()) % 7;
-  let targetUtc = Date.UTC(
-    jst.getUTCFullYear(),
-    jst.getUTCMonth(),
-    jst.getUTCDate() + daysUntilSunday,
-    20,
-  ) - JST_OFFSET_MS;
-  if (targetUtc <= now.getTime()) {
-    targetUtc += 7 * 24 * 60 * 60 * 1000;
-  }
-  return new Date(targetUtc).toISOString();
-}
 
 const WeeklyEmotionReport: ScheduledTrigger<
   typeof WeeklyEmotionReportWorkflow.definition

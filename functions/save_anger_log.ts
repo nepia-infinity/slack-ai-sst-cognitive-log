@@ -1,7 +1,7 @@
 import { DefineFunction, Schema, SlackFunction } from "deno-slack-sdk/mod.ts";
 import {
-  ANGER_LEVEL_OPTIONS,
-  ANGER_PRIORITY_OPTIONS,
+  isValidAngerLevel,
+  isValidAngerPriority,
 } from "../blocks/daily_reflection_prompt.ts";
 import AngerLogDatastore from "../datastores/anger_log.ts";
 
@@ -26,14 +26,20 @@ export const SaveAngerLogFunction = DefineFunction({
 export default SlackFunction(
   SaveAngerLogFunction,
   async ({ inputs, client }) => {
-    const { submissionId, userId, emotion, reflection, angerLevel, angerPriority } =
-      inputs;
+    const {
+      submissionId,
+      userId,
+      emotion,
+      reflection,
+      angerLevel,
+      angerPriority,
+    } = inputs;
     if (!emotion || emotion !== "anger") return { outputs: {} };
 
     if (
       !submissionId || !userId || !reflection?.trim() ||
-      !ANGER_LEVEL_OPTIONS.some((option) => option.value === angerLevel) ||
-      !ANGER_PRIORITY_OPTIONS.some((option) => option.value === angerPriority)
+      !isValidAngerLevel(angerLevel) ||
+      !isValidAngerPriority(angerPriority)
     ) {
       return { error: "怒りの記録に必要な入力が不足しています。" };
     }

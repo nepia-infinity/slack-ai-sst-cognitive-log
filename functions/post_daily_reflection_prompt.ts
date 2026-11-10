@@ -2,21 +2,24 @@ import { DefineFunction, Schema, SlackFunction } from "deno-slack-sdk/mod.ts";
 import {
   ANGER_LEVEL_ACTION_ID,
   ANGER_LEVEL_BLOCK_ID,
-  ANGER_LEVEL_OPTIONS,
   ANGER_PRIORITY_ACTION_ID,
   ANGER_PRIORITY_BLOCK_ID,
-  ANGER_PRIORITY_OPTIONS,
   DAILY_REFLECTION_MODAL_CALLBACK_ID,
   dailyReflectionMessageBlocks,
   dailyReflectionModal,
   EMOTION_INPUT_ACTION_ID,
   EMOTION_INPUT_BLOCK_ID,
-  EMOTION_OPTIONS,
+  isValidAngerLevel,
+  isValidAngerPriority,
+  isValidEmotion,
   REFLECTION_INPUT_ACTION_ID,
   REFLECTION_INPUT_BLOCK_ID,
   START_REFLECTION_ACTION_ID,
 } from "../blocks/daily_reflection_prompt.ts";
-import SlackUserProfilesDatastore from "../datastores/slack_user_profiles.ts";
+import {
+  fetchEnabledRecipients,
+  postDirectMessage,
+} from "./delivery_helpers.ts";
 
 export const PostDailyReflectionPromptFunction = DefineFunction({
   callback_id: "post_daily_reflection_prompt",
@@ -52,73 +55,24 @@ export const PostDailyReflectionPromptFunction = DefineFunction({
 export default SlackFunction(
   PostDailyReflectionPromptFunction,
   async ({ client }) => {
-    let cursor: string | undefined;
+    const recipientsResult = await fetchEnabledRecipients(client);
+    if (!recipientsResult.ok) {
+      return { error: recipientsResult.error };
+    }
+
     let deliveryCount = 0;
-
-    do {
-      const recipients = await client.apps.datastore.query<
-        typeof SlackUserProfilesDatastore.definition
-      >({
-        datastore: SlackUserProfilesDatastore.name,
-        expression: "#survey_enabled = :enabled",
-        expression_attributes: {
-          "#survey_enabled": "survey_enabled",
-        },
-        expression_values: {
-          ":enabled": true,
-        },
-        cursor,
+    for (const { userId, dmChannelId } of recipientsResult.recipients) {
+      const sent = await postDirectMessage(client, {
+        userId,
+        dmChannelId,
+        text: `<@${userId}> 出来事を振り返る時間です。`,
+        blocks: dailyReflectionMessageBlocks(userId),
+        deliveryErrorLabel: "振り返りメッセージ",
       });
-
-      if (!recipients.ok) {
-        return {
-          error: `配信対象を取得できませんでした: ${recipients.error}`,
-        };
-      }
-
-      for (const recipient of recipients.items) {
-        const userId = recipient.slack_member_id;
-        let dmChannelId = recipient.dm_channel_id;
-
-        if (!userId) {
-          continue;
-        }
-
-        if (!dmChannelId) {
-          const directMessage = await client.conversations.open({
-            users: userId,
-          });
-
-          if (!directMessage.ok || !directMessage.channel?.id) {
-            console.error(
-              `ユーザー ${userId} のDMを開けませんでした: ${
-                directMessage.error ?? "unknown_error"
-              }`,
-            );
-            continue;
-          }
-
-          dmChannelId = directMessage.channel.id;
-        }
-
-        const response = await client.chat.postMessage({
-          channel: dmChannelId,
-          text: `<@${userId}> 出来事を振り返る時間です。`,
-          blocks: dailyReflectionMessageBlocks(userId),
-        });
-
-        if (!response.ok) {
-          console.error(
-            `ユーザー ${userId} に振り返りメッセージを投稿できませんでした: ${response.error}`,
-          );
-          continue;
-        }
-
+      if (sent) {
         deliveryCount += 1;
       }
-
-      cursor = recipients.response_metadata?.next_cursor;
-    } while (cursor);
+    }
 
     if (deliveryCount === 0) {
       return {
@@ -158,9 +112,7 @@ export default SlackFunction(
         selected_option?: { value?: string } | null;
       };
       const emotion = selected.selected_option?.value;
-      if (
-        emotion && !EMOTION_OPTIONS.some((option) => option.value === emotion)
-      ) {
+      if (emotion && !isValidEmotion(emotion)) {
         return;
       }
       if (!body.view?.id) return;
@@ -196,10 +148,7 @@ export default SlackFunction(
           errors: { [REFLECTION_INPUT_BLOCK_ID]: "出来事を入力してください。" },
         };
       }
-      if (
-        !emotion ||
-        !EMOTION_OPTIONS.some((option) => option.value === emotion)
-      ) {
+      if (!isValidEmotion(emotion)) {
         return {
           response_action: "errors",
           errors: { [EMOTION_INPUT_BLOCK_ID]: "感情を1つ選択してください。" },
@@ -212,19 +161,13 @@ export default SlackFunction(
         ?.[ANGER_PRIORITY_ACTION_ID]
         ?.selected_option?.value;
       if (emotion === "anger") {
-        if (
-          !ANGER_LEVEL_OPTIONS.some((option) => option.value === angerLevel)
-        ) {
+        if (!isValidAngerLevel(angerLevel)) {
           return {
             response_action: "errors",
             errors: { [ANGER_LEVEL_BLOCK_ID]: "1〜10から選択してください。" },
           };
         }
-        if (
-          !ANGER_PRIORITY_OPTIONS.some((option) =>
-            option.value === angerPriority
-          )
-        ) {
+        if (!isValidAngerPriority(angerPriority)) {
           return {
             response_action: "errors",
             errors: {

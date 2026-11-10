@@ -40,6 +40,45 @@ export const EMOTION_OPTIONS = [
   { value: "achievement", label: "達成感" },
 ] as const;
 
+export type EmotionValue = (typeof EMOTION_OPTIONS)[number]["value"];
+export type AngerPriorityValue =
+  (typeof ANGER_PRIORITY_OPTIONS)[number]["value"];
+
+const EMOTION_LABEL_MAP = new Map<string, string>(
+  EMOTION_OPTIONS.map(({ value, label }) => [value, label] as const),
+);
+
+const ANGER_PRIORITY_LABEL_MAP = new Map<string, string>(
+  ANGER_PRIORITY_OPTIONS.map(({ value, label }) => [value, label] as const),
+);
+
+const ANGER_LEVEL_VALUE_SET = new Set<string>(
+  ANGER_LEVEL_OPTIONS.map(({ value }) => value),
+);
+
+export function isValidEmotion(value: unknown): value is EmotionValue {
+  return typeof value === "string" && EMOTION_LABEL_MAP.has(value);
+}
+
+export function getEmotionLabel(emotion: string): string | undefined {
+  return EMOTION_LABEL_MAP.get(emotion);
+}
+
+export function isValidAngerLevel(value: unknown): boolean {
+  return (typeof value === "string" || typeof value === "number") &&
+    ANGER_LEVEL_VALUE_SET.has(String(value));
+}
+
+export function isValidAngerPriority(
+  value: unknown,
+): value is AngerPriorityValue {
+  return typeof value === "string" && ANGER_PRIORITY_LABEL_MAP.has(value);
+}
+
+export function getAngerPriorityLabel(priority: string): string | undefined {
+  return ANGER_PRIORITY_LABEL_MAP.get(priority);
+}
+
 const PURPOSE_TEXT =
   "認知の歪み、自動思考に気付くために日々の出来事を記録します。";
 const ANGER_PURPOSE_TEXT =
@@ -173,9 +212,7 @@ export function dailyReflectionModal(
             initial_option: {
               text: {
                 type: "plain_text",
-                text: EMOTION_OPTIONS.find((option) =>
-                  option.value === selectedEmotion
-                )?.label ?? selectedEmotion,
+                text: getEmotionLabel(selectedEmotion) ?? selectedEmotion,
               },
               value: selectedEmotion,
             },

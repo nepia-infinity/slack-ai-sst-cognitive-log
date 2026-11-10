@@ -27,14 +27,6 @@ const saved = DailyReflectionWorkflow.addStep(SaveDailyReflectionFunction, {
   messageTs: prompt.outputs.messageTs,
 });
 
-DailyReflectionWorkflow.addStep(AnalyzeDailyReflectionFunction, {
-  reflection: prompt.outputs.reflection,
-  emotion: prompt.outputs.emotion,
-  userId: prompt.outputs.userId,
-  channelId: saved.outputs.channelId,
-  messageTs: saved.outputs.messageTs,
-});
-
 DailyReflectionWorkflow.addStep(SaveAngerLogFunction, {
   submissionId: prompt.outputs.submissionId,
   userId: prompt.outputs.userId,
@@ -42,6 +34,14 @@ DailyReflectionWorkflow.addStep(SaveAngerLogFunction, {
   reflection: prompt.outputs.reflection,
   angerLevel: prompt.outputs.angerLevel,
   angerPriority: prompt.outputs.angerPriority,
+});
+
+DailyReflectionWorkflow.addStep(AnalyzeDailyReflectionFunction, {
+  reflection: prompt.outputs.reflection,
+  emotion: prompt.outputs.emotion,
+  userId: prompt.outputs.userId,
+  channelId: saved.outputs.channelId,
+  messageTs: saved.outputs.messageTs,
 });
 
 export default DailyReflectionWorkflow;

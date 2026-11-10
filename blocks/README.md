@@ -14,10 +14,12 @@ Kitの配列や入力画面を組み立てます。 送信先や送信タイミ�
 
 | ファイル                                                 | 役割                                                                   | 主な呼び出し元（functions）                                                                                                                                                                                                                                                      |
 | -------------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [daily_reflection_prompt.ts](daily_reflection_prompt.ts) | 記録案内と入力画面。感情の選択肢 `EMOTION_OPTIONS`、入力画面のIDを定義 | [post_daily_reflection_prompt.ts](../functions/post_daily_reflection_prompt.ts)、[save_daily_reflection.ts](../functions/save_daily_reflection.ts)、[save_anger_log.ts](../functions/save_anger_log.ts)、[analyze_daily_reflection.ts](../functions/analyze_daily_reflection.ts) |
+| [daily_reflection_prompt.ts](daily_reflection_prompt.ts) | 記録案内と入力画面。感情の選択肢、入力検証関数、入力画面のIDを定義     | [post_daily_reflection_prompt.ts](../functions/post_daily_reflection_prompt.ts)、[save_daily_reflection.ts](../functions/save_daily_reflection.ts)、[save_anger_log.ts](../functions/save_anger_log.ts)、[analyze_daily_reflection.ts](../functions/analyze_daily_reflection.ts) |
 | [ai_reflection.ts](ai_reflection.ts)                     | AIの構造化回答を検証し、出来事・認知・感情と行動カードを表示           | [analyze_daily_reflection.ts](../functions/analyze_daily_reflection.ts)                                                                                                                                                                                                          |
-| [weekly_emotion_report.ts](weekly_emotion_report.ts)     | 直近7日間の感情の円グラフと記録一覧を表示。共通の集計期間も計算        | [post_weekly_emotion_report.ts](../functions/post_weekly_emotion_report.ts)、[post_weekly_anger_report.ts](../functions/post_weekly_anger_report.ts)                                                                                                                             |
+| [weekly_emotion_report.ts](weekly_emotion_report.ts)     | 直近7日間の感情の円グラフと記録一覧を表示                              | [post_weekly_emotion_report.ts](../functions/post_weekly_emotion_report.ts)                                                                                                                                                                                                      |
 | [weekly_anger_report.ts](weekly_anger_report.ts)         | 怒りの強度の折れ線グラフと記録一覧を表示                               | [post_weekly_anger_report.ts](../functions/post_weekly_anger_report.ts)                                                                                                                                                                                                          |
+| [report_utils.ts](report_utils.ts)                       | 日本時間の日時整形、集計期間・配信時刻の算出、テキスト省略の共通関数   | [delivery_helpers.ts](../functions/delivery_helpers.ts)、[weekly_emotion_report.ts](weekly_emotion_report.ts)、[weekly_anger_report.ts](weekly_anger_report.ts)、[triggers/](../triggers/)                                                                                       |
+| [format_slack_reflection.ts](format_slack_reflection.ts) | AI回答のMarkdownリンクなどをSlackの表記に整形                          | [ai_reflection.ts](ai_reflection.ts)                                                                                                                                                                                                                                             |
 
 ## 日次の処理を追う順番
 
@@ -29,24 +31,25 @@ Kitの配列や入力画面を組み立てます。 送信先や送信タイミ�
    を開きます。同じblocksファイルのIDと選択肢を使って入力を検証します。
 2. `save_daily_reflection.ts` が記録を保存し、`savedReflectionMessageBlocks`
    で元のDMを保存完了の表示に更新します。
-3. `analyze_daily_reflection.ts` がOpenAIの回答を取得し、`parseAiReflection`
+3. `save_anger_log.ts` が、感情が `anger`
+   の場合だけ怒りの記録を保存します。`isValidAngerLevel` と
+   `isValidAngerPriority` を入力検証に使い、この関数から画面は送信しません。
+4. `analyze_daily_reflection.ts` がOpenAIの回答を取得し、`parseAiReflection`
    で検証します。`aiReflectionBlocks` で表示を作り、`aiReflectionFallback`
    で通知用テキストを作って、同じDMを更新します。感情名の取得には
-   `EMOTION_OPTIONS` を使います。
-4. `save_anger_log.ts` が、感情が `anger`
-   の場合だけ怒りの記録を保存します。`ANGER_LEVEL_OPTIONS` と
-   `ANGER_PRIORITY_OPTIONS` は入力検証に使い、この関数から画面は送信しません。
+   `getEmotionLabel` を使います。
 
 ## ファイル間で共有しているもの
 
-- `daily_reflection_prompt.ts` の `EMOTION_OPTIONS`
-  は感情の入力、AIへ渡す表示名、週次の感情集計で共有します。`ANGER_PRIORITY_OPTIONS`
+- `daily_reflection_prompt.ts` の `EMOTION_OPTIONS`・`getEmotionLabel`・`isValidEmotion`
+  は感情の入力、AIへ渡す表示名、週次の感情集計で共有します。`ANGER_PRIORITY_OPTIONS`・`getAngerPriorityLabel`・`isValidAngerPriority`・`isValidAngerLevel`
   は怒りの入力・検証と週次アンガーログの表示名で共有します。
-- `weekly_emotion_report.ts` の `currentWeekWindow`
-  は、感情と怒りの両方の週次配信関数が使います。Datastoreからの取得は各配信関数、対象ユーザー・期間の絞り込みとグラフ・表の生成は各blocksファイルが担当します。
-- `ai_reflection.ts` は例外的に
-  [functions/format_slack_reflection.ts](../functions/format_slack_reflection.ts)
-  を参照します。この関数は文字列整形の補助関数で、Slackイベントの処理やAPI送信は行いません。MarkdownリンクなどをSlackの表記に直します。
+- `report_utils.ts` の `currentWeekWindow`・`jstDateTime`・`shorten`
+  は、感情と怒りの両方の週次レポートで共有します。Datastoreからの取得とDM送信は
+  [functions/delivery_helpers.ts](../functions/delivery_helpers.ts)、対象ユーザー・期間の絞り込みとグラフ・表の生成は各blocksファイルが担当します。
+- `format_slack_reflection.ts` は `ai_reflection.ts`
+  から参照し、MarkdownリンクなどをSlackの表記に直します。`functions` から `blocks`
+  への単方向依存を保ちます。
 
 ## 保存値と表示のルール
 

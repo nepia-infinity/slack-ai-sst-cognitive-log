@@ -1,4 +1,4 @@
-import { formatSlackReflection } from "../functions/format_slack_reflection.ts";
+import { formatSlackReflection } from "./format_slack_reflection.ts";
 import { ACTION_ICONS } from "../prompts/reflection_response_format.ts";
 
 const DISCLAIMER =
@@ -10,7 +10,9 @@ export type AiReflection = {
   event: string;
   cognition: string;
   emotion: string;
-  actions: Array<{ title: string; subtitle: string; body: string; icon: string }>;
+  actions: Array<
+    { title: string; subtitle: string; body: string; icon: string }
+  >;
 };
 
 export function parseAiReflection(value: unknown): AiReflection {
@@ -54,10 +56,12 @@ function context() {
 // Slack SDK 2.15.1のBlock型にはcardやheader.levelがまだないため、
 // 投稿時の検証はSlack APIに委ねます。
 // deno-lint-ignore no-explicit-any
+type AiReflectionBlock = any;
+
 export function aiReflectionBlocks(
   result: AiReflection,
   userId?: string,
-): any[] {
+): AiReflectionBlock[] {
   const mention = userId ? [section(`<@${userId}>`)] : [];
   if (result.kind === "urgent") {
     if (!result.message.trim()) throw new Error("緊急時の案内が空です。");
@@ -69,8 +73,7 @@ export function aiReflectionBlocks(
     ];
   }
 
-  // deno-lint-ignore no-explicit-any
-  const blocks: any[] = [...mention, header("記載内容の整理")];
+  const blocks: AiReflectionBlock[] = [...mention, header("記載内容の整理")];
   const summaryFields = [
     ["出来事", result.event],
     ["認知", result.cognition],
@@ -118,9 +121,10 @@ export function aiReflectionBlocks(
         type: "card",
         slack_icon: {
           type: "icon",
-          name: ACTION_ICONS.includes(action.icon as typeof ACTION_ICONS[number])
-            ? action.icon
-            : "lightbulb",
+          name:
+            ACTION_ICONS.includes(action.icon as typeof ACTION_ICONS[number])
+              ? action.icon
+              : "lightbulb",
         },
         title: { type: "plain_text", text: title },
         ...(subtitle

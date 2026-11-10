@@ -1,5 +1,5 @@
 import { DefineFunction, Schema, SlackFunction } from "deno-slack-sdk/mod.ts";
-import { EMOTION_OPTIONS } from "../blocks/daily_reflection_prompt.ts";
+import { getEmotionLabel } from "../blocks/daily_reflection_prompt.ts";
 import { CBT_SYSTEM_PROMPT } from "../prompts/cbt_reflection.ts";
 import { REFLECTION_RESPONSE_FORMAT } from "../prompts/reflection_response_format.ts";
 import {
@@ -70,9 +70,7 @@ export default SlackFunction(
     }
 
     try {
-      const emotionLabel = EMOTION_OPTIONS.find((option) =>
-        option.value === emotion
-      )?.label ?? emotion;
+      const emotionLabel = getEmotionLabel(emotion) ?? emotion;
       const response = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
         headers: {

@@ -73,7 +73,7 @@ slack-cli datastore query --app local --datastore daily_reflections '{"limit":10
 deno task test
 ```
 
-怒りを選んだ場合は `slack-cli datastore query --app local --datastore anger_log '{"limit":10}' --output json` でも追加回答を確認できます。4番目の保存ステップはAIの振り返りの後に動くため、AI処理が失敗した場合は通常の記録だけが残り、その回は週次アンガーログにも表示されません。
+怒りを選んだ場合は `slack-cli datastore query --app local --datastore anger_log '{"limit":10}' --output json` でも追加回答を確認できます。怒りの記録はAIの振り返りの前に保存されるため、AI処理が失敗した場合も通常の記録とアンガーログの両方が残ります。
 
 Datastoreの検索方法と保存項目は [datastores/README.md](datastores/README.md) を参照してください。ローカルアプリへのDatastore操作でサポート警告が出る場合は、`(local)` を選んでいることを確認し、必要に応じて `--force` を追加します。
 
@@ -88,7 +88,7 @@ Datastoreの検索方法と保存項目は [datastores/README.md](datastores/REA
 
 本番の記録は `slack-cli datastore query --app deployed --datastore daily_reflections '{"limit":10}' --output json` で確認できます。ログの確認には `slack-cli activity --tail` を使います。結果には個人的な記述が含まれるため、共有するときは内容を伏せてください。
 
-AI処理が失敗した場合も保存済みの回答は残ります。OpenAIの応答が未完了または構造不正の場合は途中の文章を投稿せず、ワークフローの3番目のステップは失敗として終了します。ローカル実行の関数は外部APIを待つ間に時間制限に達する場合があります。
+AI処理が失敗した場合も保存済みの回答は残ります。OpenAIの応答が未完了または構造不正の場合は途中の文章を投稿せず、ワークフローの4番目のステップは失敗として終了します。ローカル実行の関数は外部APIを待つ間に時間制限に達する場合があります。
 
 ## ディレクトリ
 

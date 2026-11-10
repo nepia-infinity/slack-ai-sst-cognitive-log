@@ -1,8 +1,8 @@
-import { ANGER_PRIORITY_OPTIONS } from "./daily_reflection_prompt.ts";
-
-const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
-const MAX_TABLE_RECORDS = 100;
-const MAX_REFLECTION_LENGTH = 100;
+import {
+  getAngerPriorityLabel,
+  isValidAngerLevel,
+} from "./daily_reflection_prompt.ts";
+import { jstDateTime, MAX_TABLE_RECORDS, shorten } from "./report_utils.ts";
 
 // Slack APIが新しいグラフ・表ブロックを検証するため、SDK側の古いBlock型は使わない。
 // deno-lint-ignore no-explicit-any
@@ -17,23 +17,6 @@ export type AngerRecord = {
   recorded_at: number;
 };
 
-function jstDateTime(timestamp: number): string {
-  return new Date(timestamp + JST_OFFSET_MS).toISOString().slice(0, 16)
-    .replace("T", " ");
-}
-
-function shorten(text: string): string {
-  const characters = Array.from(text.trim());
-  return characters.length > MAX_REFLECTION_LENGTH
-    ? characters.slice(0, MAX_REFLECTION_LENGTH).join("") + "…"
-    : characters.join("");
-}
-
-function validLevel(value: number | string): boolean {
-  const level = Number(value);
-  return Number.isInteger(level) && level >= 1 && level <= 10;
-}
-
 export function weeklyAngerBlocks(
   records: AngerRecord[],
   window: { start: number; end: number },
@@ -43,7 +26,7 @@ export function weeklyAngerBlocks(
     record.user_id === userId &&
     record.recorded_at >= window.start &&
     record.recorded_at < window.end &&
-    validLevel(record.anger_level)
+    isValidAngerLevel(record.anger_level)
   ).sort((a, b) => b.recorded_at - a.recorded_at || a.id.localeCompare(b.id));
 
   if (selected.length === 0) return [];
@@ -59,9 +42,6 @@ export function weeklyAngerBlocks(
   }
   const dates = Array.from(maximumByDate.keys()).sort();
   const categories = dates.map((date) => date.slice(5).replace("-", "/"));
-  const priorityLabels = new Map<string, string>(
-    ANGER_PRIORITY_OPTIONS.map(({ value, label }) => [value, label] as const),
-  );
   const rows = [
     ["日付", "投稿内容", "怒りの強度", "重要度"].map((text) => ({
       type: "raw_text",
@@ -70,7 +50,7 @@ export function weeklyAngerBlocks(
     ...selected.slice(0, MAX_TABLE_RECORDS).map((record, index) => [
       {
         type: "raw_text",
-        text: jstDateTime(record.recorded_at) + " (#" + (index + 1) + ")",
+        text: `${jstDateTime(record.recorded_at)} (#${index + 1})`,
       },
       {
         type: "raw_text",
@@ -79,23 +59,23 @@ export function weeklyAngerBlocks(
       { type: "raw_number", value: Number(record.anger_level) },
       {
         type: "raw_text",
-        text: priorityLabels.get(record.priority ?? "") ?? "未設定",
+        text: getAngerPriorityLabel(record.priority ?? "") ?? "未設定",
       },
     ]),
   ];
-  const period = jstDateTime(window.start) + "〜" +
-    jstDateTime(window.end) + "（日本時間）";
+  const period = `${jstDateTime(window.start)}〜${
+    jstDateTime(window.end)
+  }（日本時間）`;
   const caption = selected.length > MAX_TABLE_RECORDS
-    ? "週次アンガーログ（最新" + MAX_TABLE_RECORDS + "件／全" +
-      selected.length + "件）"
-    : "週次アンガーログ（" + selected.length + "件）";
+    ? `週次アンガーログ（最新${MAX_TABLE_RECORDS}件／全${selected.length}件）`
+    : `週次アンガーログ（${selected.length}件）`;
 
   return [
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: "集計期間: " + period + "\nグラフは記録のある日ごとの最大強度です。",
+        text: `集計期間: ${period}\nグラフは記録のある日ごとの最大強度です。`,
       },
     },
     {

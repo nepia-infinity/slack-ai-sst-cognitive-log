@@ -4,6 +4,11 @@ import {
   ANGER_PRIORITY_OPTIONS,
   dailyReflectionModal,
   EMOTION_INPUT_BLOCK_ID,
+  getAngerPriorityLabel,
+  getEmotionLabel,
+  isValidAngerLevel,
+  isValidAngerPriority,
+  isValidEmotion,
   REFLECTION_INPUT_BLOCK_ID,
 } from "../daily_reflection_prompt.ts";
 
@@ -68,5 +73,32 @@ Deno.test("怒りの時だけモーダル冒頭の説明文を差し替える", 
       "認知の歪み、自動思考に気付くために日々の出来事を記録します。"
   ) {
     throw new Error("通常の説明文が変わっています");
+  }
+});
+
+Deno.test("感情・怒りの強さ・重要度の検証と表示名取得を共通関数で行える", () => {
+  if (!isValidEmotion("anger") || isValidEmotion("unknown")) {
+    throw new Error("感情コードの検証が不正です");
+  }
+  if (getEmotionLabel("anger") !== "怒り") {
+    throw new Error("感情の表示名取得が不正です");
+  }
+  if (
+    !isValidAngerLevel("1") || !isValidAngerLevel(10) ||
+    isValidAngerLevel(0) || isValidAngerLevel(11) || isValidAngerLevel("bad")
+  ) {
+    throw new Error("怒りの強さの検証が不正です");
+  }
+  if (
+    !isValidAngerPriority("important_changeable") ||
+    isValidAngerPriority("invalid")
+  ) {
+    throw new Error("怒りの重要度の検証が不正です");
+  }
+  if (
+    getAngerPriorityLabel("important_changeable") !==
+      "重要かつ自分で変えることができる"
+  ) {
+    throw new Error("怒りの重要度の表示名取得が不正です");
   }
 });
